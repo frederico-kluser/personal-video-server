@@ -12,7 +12,7 @@ if (!fileNameArg) {
 }
 const FILE_NAME = fileNameArg.split('=')[1];
 
-const INPUT_VIDEO = `/Volumes/Extension/Videos/3x/${FILE_NAME}.mp4`;
+const INPUT_VIDEO = `${process.cwd()}/videos/${FILE_NAME}.mp4`;
 const OUTPUT_GIF = `${process.cwd()}/gifs/${FILE_NAME}.gif`;
 const FRAME_DIR = `${process.cwd()}/frames_tmp`;
 const PALETTE_PATH = `${process.cwd()}/palette.png`;

@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-const folderPath = '/Volumes/Extension/Videos/3x'; // Substitua pelo caminho da sua pasta
+const folderPath = `${process.cwd()}/videos`; // Substitua pelo caminho da sua pasta
 
 fs.readdir(folderPath, (err, files) => {
 	if (err) {
@@ -12,5 +13,9 @@ fs.readdir(folderPath, (err, files) => {
 	// Filtra apenas arquivos (ignora diretórios, opcional)
 	const fileNames = files.filter((file) => fs.lstatSync(path.join(folderPath, file)).isFile());
 
-	console.log('Arquivos na pasta:', fileNames);
+	const onlyMp4Files = fileNames.filter((file) => file.endsWith('.mp4'));
+
+	const onlyFilesWithoutExtension = onlyMp4Files.map((file) => file.replace('.mp4', ''));
+
+	console.log('Arquivos na pasta:', onlyFilesWithoutExtension);
 });
