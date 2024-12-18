@@ -1,2 +1,1 @@
-chmod +x gerar_gif.sh
-./gerar_gif.sh
+node generate-gifs.js --file="ASHLY ANDERSON GOES OVER ALL HER MOVES OF HER FAVORITE PUSSY AND BOOBS TONING WORKOUT ON CAMERA"

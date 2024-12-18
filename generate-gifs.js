@@ -1,9 +1,19 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-const FILE_NAME = 'ASHLY ANDERSON GOES OVER ALL HER MOVES OF HER FAVORITE PUSSY AND BOOBS TONING WORKOUT ON CAMERA';
+// Obtém o FILE_NAME a partir de uma flag ao executar o script no terminal
+const args = process.argv.slice(2);
+const fileNameArg = args.find((arg) => arg.startsWith('--file='));
+if (!fileNameArg) {
+	console.error(
+		'Erro: Você deve fornecer o nome do arquivo usando a flag --file. Exemplo: node script.js --file=MeuVideo',
+	);
+	process.exit(1);
+}
+const FILE_NAME = fileNameArg.split('=')[1];
+
 const INPUT_VIDEO = `/Volumes/Extension/Videos/3x/${FILE_NAME}.mp4`;
-const OUTPUT_GIF = `${process.cwd()}/${FILE_NAME}.gif`;
+const OUTPUT_GIF = `${process.cwd()}/gifs/${FILE_NAME}.gif`;
 const FRAME_DIR = `${process.cwd()}/frames_tmp`;
 const PALETTE_PATH = `${process.cwd()}/palette.png`;
 
@@ -49,14 +59,6 @@ extractFrames(startPoints[0], SEGMENT_DURATION, 'segment1');
 extractFrames(startPoints[1], SEGMENT_DURATION, 'segment2');
 extractFrames(startPoints[2], SEGMENT_DURATION, 'segment3');
 extractFrames(startPoints[3], SEGMENT_DURATION, 'segment4');
-
-// Agora temos frames como segment1_001.png, segment1_002.png, ..., segment4_XXX.png
-// Para gerar o GIF, vamos usar um padrão de entrada glob.
-// O ffmpeg processa em ordem alfabética, então segment1 vem antes de segment2, e assim por diante.
-// Isso garantirá que a ordem seja segment1, depois segment2, segment3 e segment4.
-//
-// Caso queira garantir total controle da ordem, poderíamos renomear os arquivos posteriormente,
-// mas dado a nomeação com prefixos segment1, segment2, etc, a ordem alfabética deve refletir a ordem desejada.
 
 // Gera paleta com base nos frames
 execSync(`ffmpeg -pattern_type glob -i '${FRAME_DIR}/segment*_*.png' -vf "palettegen" -y "${PALETTE_PATH}"`);
