@@ -1,0 +1,2 @@
+chmod +x gerar_gif.sh
+./gerar_gif.sh
