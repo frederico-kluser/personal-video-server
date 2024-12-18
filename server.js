@@ -46,6 +46,17 @@ const server = http.createServer((req, res) => {
                   max-height: 200px;
                   object-fit: cover;
               }
+
+              @media (max-width: 600px) {
+                body { 
+                  gap: 36px;
+                }
+
+                img {
+                  width: 100vw;
+                  max-width: none;
+                  max-height: none;
+                }
           </style>
       </head>
       <body>
@@ -59,14 +70,15 @@ const server = http.createServer((req, res) => {
 		});
 	} else if (req.url.startsWith('/gifs/')) {
 		// Servir arquivos GIF estáticos
-		const gifPath = path.join(gifsDir, path.basename(req.url));
+		const requestedFile = decodeURIComponent(path.basename(req.url));
+		const gifPath = path.join(gifsDir, requestedFile);
+
 		fs.stat(gifPath, (err, stats) => {
 			if (err || !stats.isFile()) {
 				res.writeHead(404, { 'Content-Type': 'text/plain' });
 				return res.end('Arquivo não encontrado');
 			}
 
-			// Ler o arquivo e enviar
 			fs.readFile(gifPath, (readErr, data) => {
 				if (readErr) {
 					res.writeHead(500, { 'Content-Type': 'text/plain' });
