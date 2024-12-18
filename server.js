@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const gifsDir = path.join(__dirname, 'gifs');
+const videosDir = path.join(__dirname, 'videos');
 
 // Função para embaralhar um array (Fisher-Yates)
 function shuffleArray(array) {
@@ -45,6 +46,7 @@ const server = http.createServer((req, res) => {
                   margin: 5px;
                   object-fit: cover;
                   border-radius: 15px;
+                  cursor: pointer;
               }
 
               @media (max-width: 600px) {
@@ -57,10 +59,20 @@ const server = http.createServer((req, res) => {
                   max-width: none;
                   max-height: none;
                 }
+              }
           </style>
       </head>
       <body>
-          ${gifFiles.map((gif) => `<img src="/gifs/${encodeURIComponent(gif)}" alt="${gif}" />`).join('')}
+          ${gifFiles
+						.map((gif) => {
+							const baseName = gif.replace('.gif', '');
+							return `
+                <a href="/videos/${encodeURIComponent(baseName)}.mp4">
+                  <img src="/gifs/${encodeURIComponent(gif)}" alt="${gif}" />
+                </a>
+              `;
+						})
+						.join('')}
       </body>
       </html>
       `;
@@ -86,6 +98,29 @@ const server = http.createServer((req, res) => {
 				}
 
 				res.writeHead(200, { 'Content-Type': 'image/gif' });
+				res.end(data);
+			});
+		});
+	} else if (req.url.startsWith('/videos/')) {
+		// Servir arquivos de vídeo estáticos
+		const requestedFile = decodeURIComponent(path.basename(req.url));
+		const videoPath = path.join(videosDir, requestedFile);
+
+		fs.stat(videoPath, (err, stats) => {
+			if (err || !stats.isFile()) {
+				res.writeHead(404, { 'Content-Type': 'text/plain' });
+				return res.end('Arquivo de vídeo não encontrado');
+			}
+
+			// Aqui podemos apenas retornar o vídeo inteiro. Se quiser suporte a streaming parcial,
+			// precisamos lidar com o cabeçalho "Range". Para simplificar, retornaremos o arquivo completo.
+			fs.readFile(videoPath, (readErr, data) => {
+				if (readErr) {
+					res.writeHead(500, { 'Content-Type': 'text/plain' });
+					return res.end('Erro interno do servidor ao ler o vídeo');
+				}
+
+				res.writeHead(200, { 'Content-Type': 'video/mp4' });
 				res.end(data);
 			});
 		});
