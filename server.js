@@ -39,12 +39,12 @@ const server = http.createServer((req, res) => {
                   flex-wrap: wrap;
                   justify-content: center;
                   background: #f0f0f0;
+                  gap: 32px;
               }
               img {
                   margin: 5px;
-                  max-width: 200px;
-                  max-height: 200px;
                   object-fit: cover;
+                  border-radius: 15px;
               }
 
               @media (max-width: 600px) {
