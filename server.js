@@ -39,7 +39,7 @@ const server = http.createServer((req, res) => {
                   display: flex;
                   flex-wrap: wrap;
                   justify-content: center;
-                  background: #f0f0f0;
+                  background: #212121;
                   gap: 32px;
               }
               img {
@@ -58,6 +58,7 @@ const server = http.createServer((req, res) => {
                   width: 100vw;
                   max-width: none;
                   max-height: none;
+                  border-radius: 0;
                 }
               }
           </style>
@@ -102,7 +103,7 @@ const server = http.createServer((req, res) => {
 			});
 		});
 	} else if (req.url.startsWith('/videos/')) {
-		// Servir arquivos de vídeo estáticos
+		// Servir arquivos de vídeo com suporte a Range
 		const requestedFile = decodeURIComponent(path.basename(req.url));
 		const videoPath = path.join(videosDir, requestedFile);
 
@@ -112,17 +113,32 @@ const server = http.createServer((req, res) => {
 				return res.end('Arquivo de vídeo não encontrado');
 			}
 
-			// Aqui podemos apenas retornar o vídeo inteiro. Se quiser suporte a streaming parcial,
-			// precisamos lidar com o cabeçalho "Range". Para simplificar, retornaremos o arquivo completo.
-			fs.readFile(videoPath, (readErr, data) => {
-				if (readErr) {
-					res.writeHead(500, { 'Content-Type': 'text/plain' });
-					return res.end('Erro interno do servidor ao ler o vídeo');
-				}
+			const range = req.headers.range;
+			const fileSize = stats.size;
 
-				res.writeHead(200, { 'Content-Type': 'video/mp4' });
-				res.end(data);
-			});
+			if (!range) {
+				// Sem cabeçalho range, envia o arquivo inteiro (não é ideal para streaming)
+				res.writeHead(200, {
+					'Content-Type': 'video/mp4',
+					'Content-Length': fileSize,
+				});
+				fs.createReadStream(videoPath).pipe(res);
+			} else {
+				// Com range, enviar apenas o pedaço solicitado
+				const parts = range.replace(/bytes=/, '').split('-');
+				const start = parseInt(parts[0], 10);
+				const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+				const chunkSize = end - start + 1;
+
+				const file = fs.createReadStream(videoPath, { start, end });
+				res.writeHead(206, {
+					'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+					'Accept-Ranges': 'bytes',
+					'Content-Length': chunkSize,
+					'Content-Type': 'video/mp4',
+				});
+				file.pipe(res);
+			}
 		});
 	} else {
 		// Qualquer outra rota retorna 404
