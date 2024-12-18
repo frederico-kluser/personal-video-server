@@ -1,12 +1,11 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 
-const FILE_NAME = 'DILLION HARPER S FIRST SCENE YOUNG PORNSTAR WHEN SHE WAS STILL AN AMATEUR';
-const INPUT_VIDEO = `/Volumes/Extension/${FILE_NAME}.mp4`;
-const OUTPUT_GIF = `/Volumes/Extension/Projects/personal-video-server/${FILE_NAME}.gif`;
-const FRAME_DIR = '/Volumes/Extension/Projects/personal-video-server/frames_tmp';
-const PALETTE_PATH = '/Volumes/Extension/Projects/personal-video-server/palette.png';
+const FILE_NAME = 'ASHLY ANDERSON GOES OVER ALL HER MOVES OF HER FAVORITE PUSSY AND BOOBS TONING WORKOUT ON CAMERA';
+const INPUT_VIDEO = `/Volumes/Extension/Videos/3x/${FILE_NAME}.mp4`;
+const OUTPUT_GIF = `${process.cwd()}/${FILE_NAME}.gif`;
+const FRAME_DIR = `${process.cwd()}/frames_tmp`;
+const PALETTE_PATH = `${process.cwd()}/palette.png`;
 
 const WIDTH = 320; // Largura do GIF final
 const FPS = 10; // Frames por segundo no GIF final
