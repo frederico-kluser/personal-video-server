@@ -39,10 +39,11 @@ const totalSeconds = getDuration(INPUT_VIDEO);
 
 // Calcula pontos de início para cada trecho de 5s
 const startPoints = [
-	60, // 1 minuto
-	totalSeconds * 0.25,
+	totalSeconds * 0.1,
+	totalSeconds * 0.3,
 	totalSeconds * 0.5,
-	totalSeconds * 0.75,
+	totalSeconds * 0.7,
+	totalSeconds * 0.9,
 ];
 
 // Função para extrair frames de um intervalo
@@ -59,6 +60,7 @@ extractFrames(startPoints[0], SEGMENT_DURATION, 'segment1');
 extractFrames(startPoints[1], SEGMENT_DURATION, 'segment2');
 extractFrames(startPoints[2], SEGMENT_DURATION, 'segment3');
 extractFrames(startPoints[3], SEGMENT_DURATION, 'segment4');
+extractFrames(startPoints[4], SEGMENT_DURATION, 'segment5');
 
 // Gera paleta com base nos frames
 execSync(`ffmpeg -pattern_type glob -i '${FRAME_DIR}/segment*_*.png' -vf "palettegen" -y "${PALETTE_PATH}"`);
