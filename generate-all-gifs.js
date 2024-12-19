@@ -3,6 +3,7 @@ const path = require('path');
 const { exec } = require('child_process');
 
 const folderPath = `${process.cwd()}/videos`; // Substitua pelo caminho da sua pasta
+const gifFolderPath = `${process.cwd()}/gifs`; // Caminho onde os GIFs são armazenados
 
 function processFile(file) {
 	return new Promise((resolve, reject) => {
@@ -41,11 +42,25 @@ fs.readdir(folderPath, (err, files) => {
 
 	const onlyMp4Files = fileNames.filter((file) => file.endsWith('.mp4'));
 
+	// Remove a extensão do nome do arquivo
 	const onlyFilesWithoutExtension = onlyMp4Files.map((file) => file.replace('.mp4', ''));
 
-	// console.log('Arquivos na pasta:', onlyFilesWithoutExtension);
+	// Filtra apenas os arquivos que não têm GIF correspondente
+	const filesToProcess = onlyFilesWithoutExtension.filter((file) => {
+		const gifPath = path.join(gifFolderPath, `${file}.gif`);
+		if (fs.existsSync(gifPath)) {
+			console.log(`GIF já existe para o arquivo: ${file}.mp4`);
+			return false;
+		}
+		return true;
+	});
 
-	processFilesSequentially(onlyFilesWithoutExtension).then(() => {
+	if (filesToProcess.length === 0) {
+		console.log('Todos os GIFs já estão criados. Nada para processar.');
+		return;
+	}
+
+	processFilesSequentially(filesToProcess).then(() => {
 		console.log('Todos os arquivos processados!');
 	});
 });
