@@ -25,6 +25,7 @@ const server = http.createServer((req, res) => {
 			const gifFiles = files.filter((file) => file.toLowerCase().endsWith('.gif'));
 			shuffleArray(gifFiles);
 
+			// Aqui mudamos 'src="/gifs/..."' para 'data-src="/gifs/..."'
 			const html = `
       <!DOCTYPE html>
       <html lang="pt-BR">
@@ -50,10 +51,9 @@ const server = http.createServer((req, res) => {
               }
 
               @media (max-width: 600px) {
-                body { 
+                body {
                   gap: 36px;
                 }
-
                 img {
                   width: 100vw;
                   max-width: none;
@@ -69,7 +69,8 @@ const server = http.createServer((req, res) => {
 							const baseName = gif.replace('.gif', '');
 							return `
                 <a href="/videos/${encodeURIComponent(baseName)}.mp4">
-                  <img src="/gifs/${encodeURIComponent(gif)}" alt="${gif}" />
+                  <!-- Em vez de src, usamos data-src -->
+                  <img data-src="/gifs/${encodeURIComponent(gif)}" alt="${gif}" />
                 </a>
               `;
 						})
@@ -124,12 +125,13 @@ const server = http.createServer((req, res) => {
           // Função principal para atualizar SRC de todos os GIFs usando IndexedDB
           async function cacheGifs() {
             const db = await openDB();
-            // Seleciona todas as imagens que apontam para '/gifs/...'
-            const gifImgs = document.querySelectorAll('img[src^="/gifs/"]');
 
-            gifImgs.forEach(async (img) => {
-              const src = img.getAttribute('src');    // ex: "/gifs/arquivo.gif"
-              const gifName = src.split('/').pop();   // ex: "arquivo.gif"
+            // Seleciona todas as imagens que têm data-src (e não mais src diretamente)
+            const gifImgs = document.querySelectorAll('img[data-src]');
+
+            for (const img of gifImgs) {
+              const src = img.getAttribute('data-src'); // ex: "/gifs/arquivo.gif"
+              const gifName = src.split('/').pop();      // ex: "arquivo.gif"
 
               try {
                 // 1) Verifica se já existe Blob no IndexedDB
@@ -152,7 +154,7 @@ const server = http.createServer((req, res) => {
               } catch (error) {
                 console.error('Erro ao gerenciar IndexedDB para', gifName, error);
               }
-            });
+            }
           }
 
           // Dispara a função após o carregamento do DOM
@@ -166,8 +168,10 @@ const server = http.createServer((req, res) => {
 			res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
 			res.end(html);
 		});
-	} else if (req.url.startsWith('/gifs/')) {
-		// Servir arquivos GIF estáticos
+	}
+
+	// Servir arquivos GIF estáticos
+	else if (req.url.startsWith('/gifs/')) {
 		const requestedFile = decodeURIComponent(path.basename(req.url));
 		const gifPath = path.join(gifsDir, requestedFile);
 
@@ -187,8 +191,10 @@ const server = http.createServer((req, res) => {
 				res.end(data);
 			});
 		});
-	} else if (req.url.startsWith('/videos/')) {
-		// Servir arquivos de vídeo com suporte a Range
+	}
+
+	// Servir arquivos de vídeo com suporte a Range
+	else if (req.url.startsWith('/videos/')) {
 		const requestedFile = decodeURIComponent(path.basename(req.url));
 		const videoPath = path.join(videosDir, requestedFile);
 
@@ -202,14 +208,14 @@ const server = http.createServer((req, res) => {
 			const fileSize = stats.size;
 
 			if (!range) {
-				// Sem cabeçalho range, envia o arquivo inteiro (não é ideal para streaming)
+				// Sem cabeçalho range, envia o arquivo inteiro
 				res.writeHead(200, {
 					'Content-Type': 'video/mp4',
 					'Content-Length': fileSize,
 				});
 				fs.createReadStream(videoPath).pipe(res);
 			} else {
-				// Com range, enviar apenas o pedaço solicitado
+				// Enviar apenas o pedaço solicitado (streaming)
 				const parts = range.replace(/bytes=/, '').split('-');
 				const start = parseInt(parts[0], 10);
 				const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
@@ -225,8 +231,10 @@ const server = http.createServer((req, res) => {
 				file.pipe(res);
 			}
 		});
-	} else {
-		// Qualquer outra rota retorna 404
+	}
+
+	// Qualquer outra rota retorna 404
+	else {
 		res.writeHead(404, { 'Content-Type': 'text/plain' });
 		res.end('Página não encontrada');
 	}
