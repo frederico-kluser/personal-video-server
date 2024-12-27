@@ -74,6 +74,91 @@ const server = http.createServer((req, res) => {
               `;
 						})
 						.join('')}
+
+        <script>
+          // -------------------[ Início do Script para IndexedDB ]-------------------
+          // Função para abrir/criar o banco no IndexedDB
+          function openDB() {
+            return new Promise((resolve, reject) => {
+              const request = indexedDB.open('gifsDB', 1);
+              request.onupgradeneeded = event => {
+                const db = event.target.result;
+                // Cria o ObjectStore caso não exista
+                if (!db.objectStoreNames.contains('gifs')) {
+                  db.createObjectStore('gifs');
+                }
+              };
+              request.onsuccess = event => {
+                resolve(event.target.result);
+              };
+              request.onerror = event => {
+                reject(event.target.error);
+              };
+            });
+          }
+
+          // Função para salvar Blob do GIF no banco
+          function storeGif(db, gifName, gifBlob) {
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction(['gifs'], 'readwrite');
+              const store = transaction.objectStore('gifs');
+              const request = store.put(gifBlob, gifName);
+              request.onsuccess = () => resolve();
+              request.onerror = event => reject(event.target.error);
+            });
+          }
+
+          // Função para buscar Blob de um GIF do banco
+          function getGif(db, gifName) {
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction(['gifs'], 'readonly');
+              const store = transaction.objectStore('gifs');
+              const request = store.get(gifName);
+              request.onsuccess = () => {
+                resolve(request.result); // Se não existir, virá undefined
+              };
+              request.onerror = event => reject(event.target.error);
+            });
+          }
+
+          // Função principal para atualizar SRC de todos os GIFs usando IndexedDB
+          async function cacheGifs() {
+            const db = await openDB();
+            // Seleciona todas as imagens que apontam para '/gifs/...'
+            const gifImgs = document.querySelectorAll('img[src^="/gifs/"]');
+
+            gifImgs.forEach(async (img) => {
+              const src = img.getAttribute('src');    // ex: "/gifs/arquivo.gif"
+              const gifName = src.split('/').pop();   // ex: "arquivo.gif"
+
+              try {
+                // 1) Verifica se já existe Blob no IndexedDB
+                const cachedBlob = await getGif(db, gifName);
+
+                if (cachedBlob) {
+                  // Se existir no DB, gera um objeto local e seta no src
+                  const objectURL = URL.createObjectURL(cachedBlob);
+                  img.src = objectURL;
+                } else {
+                  // 2) Se não existe, faz fetch do GIF no servidor e armazena
+                  const response = await fetch(src);
+                  const blob = await response.blob();
+                  await storeGif(db, gifName, blob);
+
+                  // Depois de salvo, aponta a imagem pro ObjectURL local
+                  const objectURL = URL.createObjectURL(blob);
+                  img.src = objectURL;
+                }
+              } catch (error) {
+                console.error('Erro ao gerenciar IndexedDB para', gifName, error);
+              }
+            });
+          }
+
+          // Dispara a função após o carregamento do DOM
+          document.addEventListener('DOMContentLoaded', cacheGifs);
+          // -------------------[ Fim do Script para IndexedDB ]-------------------
+        </script>
       </body>
       </html>
       `;
