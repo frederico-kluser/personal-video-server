@@ -5,6 +5,17 @@ const path = require('path');
 const gifsDir = path.join(__dirname, 'gifs');
 const videosDir = path.join(__dirname, 'videos');
 
+// Verifica se as pastas existem, caso contrário, cria-as
+if (!fs.existsSync(gifsDir)) {
+	console.log('Criando pasta de GIFs...');
+	fs.mkdirSync(gifsDir, { recursive: true });
+}
+
+if (!fs.existsSync(videosDir)) {
+	console.log('Criando pasta de vídeos...');
+	fs.mkdirSync(videosDir, { recursive: true });
+}
+
 // Função para embaralhar um array (Fisher-Yates)
 function shuffleArray(array) {
 	for (let i = array.length - 1; i > 0; i--) {

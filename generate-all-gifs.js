@@ -5,6 +5,12 @@ const { exec } = require('child_process');
 const folderPath = `${process.cwd()}/videos`; // Substitua pelo caminho da sua pasta
 const gifFolderPath = `${process.cwd()}/gifs`; // Caminho onde os GIFs são armazenados
 
+// Verifica se a pasta de GIFs existe e cria se não existir
+if (!fs.existsSync(gifFolderPath)) {
+    console.log('Criando pasta de GIFs...');
+    fs.mkdirSync(gifFolderPath, { recursive: true });
+}
+
 function processFile(file) {
 	return new Promise((resolve, reject) => {
 		console.log(`Processando: ${file} - node ${process.cwd()}/generate-gifs.js --file="${file}"`);
@@ -29,6 +35,12 @@ async function processFilesSequentially(files) {
 		}
 	}
 	console.log('Todos os arquivos foram processados.');
+}
+
+// Verifica se a pasta de vídeos existe
+if (!fs.existsSync(folderPath)) {
+	console.error(`Pasta de vídeos não encontrada: ${folderPath}`);
+	process.exit(1);
 }
 
 fs.readdir(folderPath, (err, files) => {

@@ -4,3 +4,4 @@ gifs/
 frames_tmp/
 
 node_modules/
+.yarn/

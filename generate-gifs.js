@@ -13,9 +13,16 @@ if (!fileNameArg) {
 const FILE_NAME = fileNameArg.split('=')[1];
 
 const INPUT_VIDEO = `${process.cwd()}/videos/${FILE_NAME}.mp4`;
-const OUTPUT_GIF = `${process.cwd()}/gifs/${FILE_NAME}.gif`;
+const OUTPUT_DIR = `${process.cwd()}/gifs`;
+const OUTPUT_GIF = `${OUTPUT_DIR}/${FILE_NAME}.gif`;
 const FRAME_DIR = `${process.cwd()}/frames_tmp`;
 const PALETTE_PATH = `${process.cwd()}/palette.png`;
+
+// Garantir que o diretório de saída exista
+if (!fs.existsSync(OUTPUT_DIR)) {
+    console.log('Criando diretório para GIFs...');
+    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+}
 
 const WIDTH = 320; // Largura do GIF final
 const FPS = 10; // Frames por segundo no GIF final
@@ -23,9 +30,14 @@ const SEGMENT_DURATION = 1; // Segundos de cada trecho
 
 // Função para obter a duração do vídeo
 function getDuration(videoPath) {
-	const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${videoPath}"`;
-	const output = execSync(cmd).toString().trim();
-	return parseFloat(output);
+	try {
+		const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${videoPath}"`;
+		const output = execSync(cmd).toString().trim();
+		return parseFloat(output);
+	} catch (error) {
+		console.error(`Erro ao obter duração do vídeo: ${error.message}`);
+		process.exit(1);
+	}
 }
 
 // Limpa diretório de frames se existir, e cria um novo
@@ -51,8 +63,13 @@ const startPoints = [
 // duration: duração do trecho (5s)
 // prefix: prefixo para nomear arquivos
 function extractFrames(start, duration, prefix) {
-	const cmd = `ffmpeg -y -ss ${start} -t ${duration} -i "${INPUT_VIDEO}" -vf "scale=${WIDTH}:-1:force_original_aspect_ratio=decrease,fps=${FPS}" "${FRAME_DIR}/${prefix}_%03d.png" -hide_banner -loglevel error`;
-	execSync(cmd);
+	try {
+		const cmd = `ffmpeg -y -ss ${start} -t ${duration} -i "${INPUT_VIDEO}" -vf "scale=${WIDTH}:-1:force_original_aspect_ratio=decrease,fps=${FPS}" "${FRAME_DIR}/${prefix}_%03d.png" -hide_banner -loglevel error`;
+		execSync(cmd);
+	} catch (error) {
+		console.error(`Erro ao extrair frames: ${error.message}`);
+		// Continuar com os outros segmentos mesmo se um falhar
+	}
 }
 
 // Extrai frames para cada um dos 4 trechos
@@ -62,13 +79,33 @@ extractFrames(startPoints[2], SEGMENT_DURATION, 'segment3');
 extractFrames(startPoints[3], SEGMENT_DURATION, 'segment4');
 extractFrames(startPoints[4], SEGMENT_DURATION, 'segment5');
 
-// Gera paleta com base nos frames
-execSync(`ffmpeg -pattern_type glob -i '${FRAME_DIR}/segment*_*.png' -vf "palettegen" -y "${PALETTE_PATH}"`);
+try {
+	// Verifica se existem frames para processar
+	const frameFiles = fs.readdirSync(FRAME_DIR);
+	if (frameFiles.length === 0) {
+		throw new Error('Nenhum frame foi extraído do vídeo.');
+	}
 
-// Gera o GIF final usando a paleta
-execSync(
-	`ffmpeg -framerate ${FPS} -pattern_type glob -i '${FRAME_DIR}/segment*_*.png' -i "${PALETTE_PATH}" -lavfi "paletteuse" -y "${OUTPUT_GIF}"`,
-);
+	// Gera paleta com base nos frames
+	console.log('Gerando paleta de cores...');
+	execSync(`ffmpeg -pattern_type glob -i '${FRAME_DIR}/segment*_*.png' -vf "palettegen" -y "${PALETTE_PATH}"`);
+
+	// Gera o GIF final usando a paleta
+	console.log('Criando GIF final...');
+	execSync(
+		`ffmpeg -framerate ${FPS} -pattern_type glob -i '${FRAME_DIR}/segment*_*.png' -i "${PALETTE_PATH}" -lavfi "paletteuse" -y "${OUTPUT_GIF}"`,
+	);
+} catch (error) {
+	console.error(`Erro ao gerar o GIF: ${error.message}`);
+	// Limpar arquivos temporários antes de sair
+	if (fs.existsSync(PALETTE_PATH)) {
+		fs.unlinkSync(PALETTE_PATH);
+	}
+	if (fs.existsSync(FRAME_DIR)) {
+		fs.rmSync(FRAME_DIR, { recursive: true, force: true });
+	}
+	process.exit(1);
+}
 
 // Remove o arquivo de paleta
 if (fs.existsSync(PALETTE_PATH)) {
