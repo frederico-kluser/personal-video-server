@@ -251,7 +251,16 @@ const server = http.createServer((req, res) => {
 	}
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+server.on('error', (error) => {
+	if (error.code === 'EADDRINUSE') {
+		console.log(`Porta ${PORT} já está em uso. Tentando porta ${parseInt(PORT) + 1}`);
+		server.listen(parseInt(PORT) + 1);
+	} else {
+		console.error('Erro ao iniciar o servidor:', error);
+	}
+});
+
 server.listen(PORT, () => {
-	console.log(`Servidor rodando na porta ${PORT}`);
+	console.log(`Servidor rodando na porta ${server.address().port}`);
 });
