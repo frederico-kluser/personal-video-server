@@ -1,6 +1,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const qrcode = require('qrcode-terminal');
 
 const gifsDir = path.join(__dirname, 'gifs');
 const videosDir = path.join(__dirname, 'videos');
@@ -22,6 +24,32 @@ function shuffleArray(array) {
 		const j = Math.floor(Math.random() * (i + 1));
 		[array[i], array[j]] = [array[j], array[i]];
 	}
+}
+
+// Função para obter os endereços IP da rede local
+function getLocalIPs() {
+	const interfaces = os.networkInterfaces();
+	const addresses = [];
+	
+	Object.keys(interfaces).forEach(name => {
+		interfaces[name].forEach(iface => {
+			// Pula interfaces não IPv4 e interfaces de loopback
+			if (iface.family === 'IPv4' && !iface.internal) {
+				addresses.push(iface.address);
+			}
+		});
+	});
+	
+	return addresses;
+}
+
+// Função para gerar QR code para uma URL
+function generateQRCode(url) {
+    return new Promise((resolve) => {
+        qrcode.generate(url, { small: true }, (qrcode) => {
+            resolve(qrcode);
+        });
+    });
 }
 
 const server = http.createServer((req, res) => {
@@ -251,16 +279,56 @@ const server = http.createServer((req, res) => {
 	}
 });
 
-const PORT = process.env.PORT || 3000;
+// Lista de portas com números repetidos para tentar
+const PREFERRED_PORTS = [8888, 9999, 7777, 6666, 5555, 4444, 3333, 2222, 1111];
+let PORT = process.env.PORT || PREFERRED_PORTS[0];
+let currentPortIndex = 0;
+
+function tryNextPort() {
+	if (currentPortIndex < PREFERRED_PORTS.length - 1) {
+		currentPortIndex++;
+		PORT = PREFERRED_PORTS[currentPortIndex];
+		server.listen(PORT);
+	} else {
+		// Se todas as portas preferidas estiverem ocupadas, tenta uma porta aleatória
+		PORT = 3000 + Math.floor(Math.random() * 1000);
+		server.listen(PORT);
+	}
+}
+
 server.on('error', (error) => {
 	if (error.code === 'EADDRINUSE') {
-		console.log(`Porta ${PORT} já está em uso. Tentando porta ${parseInt(PORT) + 1}`);
-		server.listen(parseInt(PORT) + 1);
+		console.log(`Porta ${PORT} já está em uso. Tentando próxima porta...`);
+		tryNextPort();
 	} else {
 		console.error('Erro ao iniciar o servidor:', error);
 	}
 });
 
-server.listen(PORT, () => {
-	console.log(`Servidor rodando na porta ${server.address().port}`);
+server.listen(PORT, async () => {
+	const port = server.address().port;
+	console.log(`\n=== Servidor iniciado ===`);
+	console.log(`➜ Acesso local: http://localhost:${port}`);
+	
+	// Obter e exibir endereços de rede
+	const networkIPs = getLocalIPs();
+	if (networkIPs.length > 0) {
+		console.log('\n➜ Acesse em outros dispositivos na mesma rede usando:');
+		
+		// Pegamos o primeiro IP para gerar o QR Code (geralmente o mais relevante)
+		const mainIP = networkIPs[0];
+		const mainUrl = `http://${mainIP}:${port}`;
+		
+		// Gerar e exibir o QR Code
+		const qrCodeImage = await generateQRCode(mainUrl);
+		console.log('\n📱 Escaneie o QR Code para acessar no celular:');
+		console.log(qrCodeImage);
+		
+		// Listar todas as URLs disponíveis
+		networkIPs.forEach(ip => {
+			console.log(`  http://${ip}:${port}`);
+		});
+	}
+	
+	console.log('\n=========================');
 });

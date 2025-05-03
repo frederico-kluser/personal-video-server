@@ -12,6 +12,7 @@
 	"author": "Frederico Guilherme Kluser de Oliveira",
 	"license": "ISC",
 	"dependencies": {
-		"nodemon": "^3.1.9"
+		"nodemon": "^3.1.9",
+		"qrcode-terminal": "^0.12.0"
 	}
 }
