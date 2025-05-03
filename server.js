@@ -46,7 +46,7 @@ function getLocalIPs() {
 // Função para gerar QR code para uma URL
 function generateQRCode(url) {
     return new Promise((resolve) => {
-        qrcode.generate(url, { small: true }, (qrcode) => {
+        qrcode.generate(url, (qrcode) => {
             resolve(qrcode);
         });
     });
