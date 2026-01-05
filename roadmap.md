@@ -1,14 +1,13 @@
-# Roadmap de Tarefas
+# Roadmap - Criação do README.md
 
-- [x] Analisar problema na geração de GIFs
-  - Problema identificado: A pasta '/gifs' não existe no sistema
-- [x] Verificar dependências e instalação do ffmpeg
-  - FFmpeg está instalado e funcionando corretamente
-- [x] Corrigir script de geração de GIFs
-  - Implementado verificação e criação das pastas necessárias
-  - Adicionado tratamento de erros em todos os scripts
-  - Melhorado logging de mensagens
-- [x] Testar solução com um arquivo de vídeo
-  - Teste concluído com sucesso
-  - GIFs estão sendo gerados corretamente
-  - Servidor já está rodando na porta 3000
+- [ ] Escrever seção de introdução e descrição do projeto
+- [ ] Documentar funcionalidades principais
+- [ ] Escrever seção de requisitos e instalação
+- [ ] Documentar comandos de uso
+- [ ] Criar seção de estrutura do projeto
+- [ ] Documentar configuração e variáveis de ambiente
+- [ ] Adicionar seção de tecnologias utilizadas
+- [ ] Incluir capturas de tela/exemplos visuais (descrição)
+- [ ] Documentar como funciona o sistema de cache
+- [ ] Adicionar informações sobre acesso remoto e segurança
+- [ ] Incluir licença e informações do autor
