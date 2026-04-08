@@ -2,8 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 
-const folderPath = `${process.cwd()}/videos`; // Substitua pelo caminho da sua pasta
-const gifFolderPath = `${process.cwd()}/gifs`; // Caminho onde os GIFs são armazenados
+// Flags opcionais para diretórios customizados
+const args = process.argv.slice(2);
+const videosDirArg = args.find((arg) => arg.startsWith('--videosDir='));
+const gifsDirArg = args.find((arg) => arg.startsWith('--gifsDir='));
+
+const folderPath = videosDirArg ? videosDirArg.split('=')[1] : path.join(process.cwd(), 'videos');
+const gifFolderPath = gifsDirArg ? gifsDirArg.split('=')[1] : path.join(process.cwd(), 'gifs');
 
 // Verifica se a pasta de GIFs existe e cria se não existir
 if (!fs.existsSync(gifFolderPath)) {
@@ -13,8 +18,9 @@ if (!fs.existsSync(gifFolderPath)) {
 
 function processFile(file) {
 	return new Promise((resolve, reject) => {
-		console.log(`Processando: ${file} - node ${process.cwd()}/generate-gifs.js --file="${file}"`);
-		exec(`node ${process.cwd()}/generate-gifs.js --file="${file}"`, (err, stdout, stderr) => {
+		const cmd = `node ${process.cwd()}/generate-gifs.js --file="${file}" --videosDir="${folderPath}" --gifsDir="${gifFolderPath}"`;
+		console.log(`Processando: ${file}`);
+		exec(cmd, (err, stdout, stderr) => {
 			if (err) {
 				console.error(`Erro ao processar o arquivo ${file}:`, stderr);
 				reject(err);
@@ -52,7 +58,7 @@ fs.readdir(folderPath, (err, files) => {
 	// Filtra apenas arquivos (ignora diretórios, opcional)
 	const fileNames = files.filter((file) => fs.lstatSync(path.join(folderPath, file)).isFile());
 
-	const onlyMp4Files = fileNames.filter((file) => file.endsWith('.mp4'));
+	const onlyMp4Files = fileNames.filter((file) => file.endsWith('.mp4') && !file.startsWith('._'));
 
 	// Remove a extensão do nome do arquivo
 	const onlyFilesWithoutExtension = onlyMp4Files.map((file) => file.replace('.mp4', ''));

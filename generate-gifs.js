@@ -1,7 +1,8 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
-// Obtém o FILE_NAME a partir de uma flag ao executar o script no terminal
+// Obtém flags a partir dos argumentos do terminal
 const args = process.argv.slice(2);
 const fileNameArg = args.find((arg) => arg.startsWith('--file='));
 if (!fileNameArg) {
@@ -12,11 +13,17 @@ if (!fileNameArg) {
 }
 const FILE_NAME = fileNameArg.split('=')[1];
 
-const INPUT_VIDEO = `${process.cwd()}/videos/${FILE_NAME}.mp4`;
-const OUTPUT_DIR = `${process.cwd()}/gifs`;
-const OUTPUT_GIF = `${OUTPUT_DIR}/${FILE_NAME}.gif`;
-const FRAME_DIR = `${process.cwd()}/frames_tmp`;
-const PALETTE_PATH = `${process.cwd()}/palette.png`;
+// Flags opcionais para diretórios customizados
+const videosDirArg = args.find((arg) => arg.startsWith('--videosDir='));
+const gifsDirArg = args.find((arg) => arg.startsWith('--gifsDir='));
+
+const VIDEOS_DIR = videosDirArg ? videosDirArg.split('=')[1] : path.join(process.cwd(), 'videos');
+const OUTPUT_DIR = gifsDirArg ? gifsDirArg.split('=')[1] : path.join(process.cwd(), 'gifs');
+
+const INPUT_VIDEO = path.join(VIDEOS_DIR, `${FILE_NAME}.mp4`);
+const OUTPUT_GIF = path.join(OUTPUT_DIR, `${FILE_NAME}.gif`);
+const FRAME_DIR = path.join(process.cwd(), 'frames_tmp');
+const PALETTE_PATH = path.join(process.cwd(), 'palette.png');
 
 // Garantir que o diretório de saída exista
 if (!fs.existsSync(OUTPUT_DIR)) {

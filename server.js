@@ -4,20 +4,6 @@ const path = require('path');
 const os = require('os');
 const qrcode = require('qrcode-terminal');
 
-const gifsDir = path.join(__dirname, 'gifs');
-const videosDir = path.join(__dirname, 'videos');
-
-// Verifica se as pastas existem, caso contrário, cria-as
-if (!fs.existsSync(gifsDir)) {
-	console.log('Criando pasta de GIFs...');
-	fs.mkdirSync(gifsDir, { recursive: true });
-}
-
-if (!fs.existsSync(videosDir)) {
-	console.log('Criando pasta de vídeos...');
-	fs.mkdirSync(videosDir, { recursive: true });
-}
-
 // Função para embaralhar um array (Fisher-Yates)
 function shuffleArray(array) {
 	for (let i = array.length - 1; i > 0; i--) {
@@ -33,7 +19,6 @@ function getLocalIPs() {
 	
 	Object.keys(interfaces).forEach(name => {
 		interfaces[name].forEach(iface => {
-			// Pula interfaces não IPv4 e interfaces de loopback
 			if (iface.family === 'IPv4' && !iface.internal) {
 				addresses.push(iface.address);
 			}
@@ -52,7 +37,19 @@ function generateQRCode(url) {
     });
 }
 
-const server = http.createServer((req, res) => {
+function startServer(videosDir, gifsDir) {
+	// Verifica se as pastas existem, caso contrário, cria-as
+	if (!fs.existsSync(gifsDir)) {
+		console.log('Criando pasta de GIFs...');
+		fs.mkdirSync(gifsDir, { recursive: true });
+	}
+
+	if (!fs.existsSync(videosDir)) {
+		console.log('Criando pasta de vídeos...');
+		fs.mkdirSync(videosDir, { recursive: true });
+	}
+
+	const server = http.createServer((req, res) => {
 	if (req.url === '/') {
 		// Página principal: listar e embaralhar os GIFs
 		fs.readdir(gifsDir, (err, files) => {
@@ -279,56 +276,54 @@ const server = http.createServer((req, res) => {
 	}
 });
 
-// Lista de portas com números repetidos para tentar
-const PREFERRED_PORTS = [8888, 9999, 7777, 6666, 5555, 4444, 3333, 2222, 1111];
-let PORT = process.env.PORT || PREFERRED_PORTS[0];
-let currentPortIndex = 0;
+	// Lista de portas com números repetidos para tentar
+	const PREFERRED_PORTS = [8888, 9999, 7777, 6666, 5555, 4444, 3333, 2222, 1111];
+	let PORT = process.env.PORT || PREFERRED_PORTS[0];
+	let currentPortIndex = 0;
 
-function tryNextPort() {
-	if (currentPortIndex < PREFERRED_PORTS.length - 1) {
-		currentPortIndex++;
-		PORT = PREFERRED_PORTS[currentPortIndex];
-		server.listen(PORT);
-	} else {
-		// Se todas as portas preferidas estiverem ocupadas, tenta uma porta aleatória
-		PORT = 3000 + Math.floor(Math.random() * 1000);
-		server.listen(PORT);
+	function tryNextPort() {
+		if (currentPortIndex < PREFERRED_PORTS.length - 1) {
+			currentPortIndex++;
+			PORT = PREFERRED_PORTS[currentPortIndex];
+			server.listen(PORT);
+		} else {
+			PORT = 3000 + Math.floor(Math.random() * 1000);
+			server.listen(PORT);
+		}
 	}
+
+	server.on('error', (error) => {
+		if (error.code === 'EADDRINUSE') {
+			console.log(`Porta ${PORT} já está em uso. Tentando próxima porta...`);
+			tryNextPort();
+		} else {
+			console.error('Erro ao iniciar o servidor:', error);
+		}
+	});
+
+	server.listen(PORT, async () => {
+		const port = server.address().port;
+		console.log(`\n=== Servidor iniciado ===`);
+		console.log(`➜ Acesso local: http://localhost:${port}`);
+		
+		const networkIPs = getLocalIPs();
+		if (networkIPs.length > 0) {
+			console.log('\n➜ Acesse em outros dispositivos na mesma rede usando:');
+			
+			const mainIP = networkIPs[0];
+			const mainUrl = `http://${mainIP}:${port}`;
+			
+			const qrCodeImage = await generateQRCode(mainUrl);
+			console.log('\n📱 Escaneie o QR Code para acessar no celular:');
+			console.log(qrCodeImage);
+			
+			networkIPs.forEach(ip => {
+				console.log(`  http://${ip}:${port}`);
+			});
+		}
+		
+		console.log('\n=========================');
+	});
 }
 
-server.on('error', (error) => {
-	if (error.code === 'EADDRINUSE') {
-		console.log(`Porta ${PORT} já está em uso. Tentando próxima porta...`);
-		tryNextPort();
-	} else {
-		console.error('Erro ao iniciar o servidor:', error);
-	}
-});
-
-server.listen(PORT, async () => {
-	const port = server.address().port;
-	console.log(`\n=== Servidor iniciado ===`);
-	console.log(`➜ Acesso local: http://localhost:${port}`);
-	
-	// Obter e exibir endereços de rede
-	const networkIPs = getLocalIPs();
-	if (networkIPs.length > 0) {
-		console.log('\n➜ Acesse em outros dispositivos na mesma rede usando:');
-		
-		// Pegamos o primeiro IP para gerar o QR Code (geralmente o mais relevante)
-		const mainIP = networkIPs[0];
-		const mainUrl = `http://${mainIP}:${port}`;
-		
-		// Gerar e exibir o QR Code
-		const qrCodeImage = await generateQRCode(mainUrl);
-		console.log('\n📱 Escaneie o QR Code para acessar no celular:');
-		console.log(qrCodeImage);
-		
-		// Listar todas as URLs disponíveis
-		networkIPs.forEach(ip => {
-			console.log(`  http://${ip}:${port}`);
-		});
-	}
-	
-	console.log('\n=========================');
-});
+module.exports = { startServer };
