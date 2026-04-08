@@ -117,8 +117,8 @@ function startServer(videosDir, gifsDir) {
 									padding: 4px;
 								}
 								.gallery {
-									grid-template-columns: repeat(4, minmax(0, 1fr));
-									grid-auto-rows: 23vw;
+									grid-template-columns: repeat(2, minmax(0, 1fr));
+									grid-auto-rows: 42vw;
 									gap: 4px;
 								}
 								.tile,
