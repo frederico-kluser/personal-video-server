@@ -70,47 +70,92 @@ function startServer(videosDir, gifsDir) {
           <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
           <title>Mosaico de GIFs</title>
           <style>
-              body {
-                  margin: 0;
-                  padding: 0;
-                  display: flex;
-                  flex-wrap: wrap;
-                  justify-content: center;
-                  background: #212121;
-                  gap: 32px;
-              }
-              img {
-                  margin: 5px;
-                  object-fit: cover;
-                  border-radius: 15px;
-                  cursor: pointer;
-              }
+							:root {
+									color-scheme: dark;
+							}
+							* {
+									box-sizing: border-box;
+							}
+							body {
+									margin: 0;
+									padding: 8px;
+									background: #111111;
+							}
+							.gallery {
+									display: grid;
+									grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+									grid-auto-rows: 120px;
+									grid-auto-flow: dense;
+									gap: 8px;
+							}
+							.tile {
+									display: block;
+									overflow: hidden;
+									border-radius: 16px;
+									background: #1b1b1b;
+							}
+							.tile img {
+									width: 100%;
+									height: 100%;
+									display: block;
+									object-fit: cover;
+									cursor: pointer;
+							}
+							.tile--wide {
+									grid-column: span 2;
+							}
+							.tile--tall {
+									grid-row: span 2;
+							}
+							.tile--feature {
+									grid-column: span 2;
+									grid-row: span 2;
+							}
 
-              @media (max-width: 600px) {
-                body {
-                  gap: 36px;
-                }
-                img {
-                  width: 100vw;
-                  max-width: none;
-                  max-height: none;
-                  border-radius: 0;
-                }
-              }
+							@media (max-width: 600px) {
+								body {
+									padding: 4px;
+								}
+								.gallery {
+									grid-template-columns: repeat(4, minmax(0, 1fr));
+									grid-auto-rows: 23vw;
+									gap: 4px;
+								}
+								.tile,
+								.tile--wide,
+								.tile--tall,
+								.tile--feature {
+									grid-column: span 1;
+									grid-row: span 1;
+									border-radius: 8px;
+								}
+							}
           </style>
       </head>
       <body>
+					<main class="gallery">
           ${gifFiles
-						.map((gif) => {
+						.map((gif, index) => {
 							const baseName = gif.replace('.gif', '');
+							let tileClass = 'tile';
+
+							if (index % 11 === 0) {
+								tileClass = 'tile tile--feature';
+							} else if (index % 7 === 0) {
+								tileClass = 'tile tile--tall';
+							} else if (index % 5 === 0) {
+								tileClass = 'tile tile--wide';
+							}
+
 							return `
-                <a href="/videos/${encodeURIComponent(baseName)}.mp4">
+								<a class="${tileClass}" href="/videos/${encodeURIComponent(baseName)}.mp4">
                   <!-- Em vez de src, usamos data-src -->
-                  <img data-src="/gifs/${encodeURIComponent(gif)}" alt="${gif}" />
+									<img data-src="/gifs/${encodeURIComponent(gif)}" alt="${gif}" loading="lazy" />
                 </a>
               `;
 						})
 						.join('')}
+					</main>
 
         <script>
           // -------------------[ Início do Script para IndexedDB ]-------------------
